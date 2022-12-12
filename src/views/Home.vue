@@ -1,14 +1,15 @@
-<template>
-  <div
-    class="main-container"
-    :style="'background-image:url(' + Background + ')'"
+<template> 
+ <div
+    class="main-container"  
+    style="width: 100%; height: 100%;"
   >
-    <div class="chat-box">
-      <lemon-imui
+    <div class="chat-box"  style="width: 100%; height: 100%;"> 
+      <lemon-imui id="app"
         :user="user"
         ref="IMUI"
-        width="1000px"
-        :height="height"
+        width="100%"
+        height="100%"
+        hideMenu
         :contextmenu="contextmenu"
         :contact-contextmenu="contactContextmenu"
         :theme="setting.theme"
@@ -20,14 +21,21 @@
         @change-contact="handleChangeContact"
         @pull-messages="handlePullMessages"
         @message-click="handleMessageClick"
-        @send="handleSend"
-        style="min-height:600px"
+        @send="handleSend"        
       >
         <template #cover>
           <div>
             <div class="cover">
               <i class="lemon-icon-message"></i>
-              <p><b>即时聊天 Raingad</b> IM</p>
+              <p><b> Maons</b> Web3.0 IM</p>
+
+              <p><b>无中心服务器</b></p>
+
+              <p><b> 全球共识状态一致</b></p>
+
+              <p><b> 数据主权不可侵犯</b></p>
+
+              <p><b> 数据共享全球可达 ​​​</b></p>
             </div>
           </div>
         </template>
@@ -89,8 +97,9 @@
                   <el-tag size="mini" v-if="contact.setting.nospeak == 2"  type="danger">全员禁言中</el-tag>
                 </span>
                 <span class="displayName" v-if="is_group == 0">
-                  <el-tag size="mini" type="success" v-if="contact.is_online">在线</el-tag> 
-                  <el-tag size="mini" type="info" v-if="!contact.is_online">离线 </el-tag> {{contact.displayName}}</span>
+                  <!-- <el-tag size="mini" type="success" v-if="contact.is_online">在线</el-tag> 
+                  <el-tag size="mini" type="info" v-if="!contact.is_online">正在连接 </el-tag> -->
+                   {{contact.displayName}}</span>
               </span>
 
               <input
@@ -133,11 +142,16 @@
                 circle
               ></el-button>
             </div>
+            <div style="margin-left:0px"     class="lemon-menu__item lemon-menu__item--active"         
+                title="通讯录"                
+              @click="changeMenu('contacts')"
+              >
+              <i class="lemon-icon-addressbook" ></i>
+            </div>
             <div class="search-list" v-if="searchResult">
               <div
                 v-for="(item, index) in searchList"
-                :key="index"
-                v-if="searchList.length > 0"
+                :key="index"               
                 class="search-list-item"
               >
                 <lemon-contact
@@ -169,9 +183,50 @@
           </div>
         </template>
         <!-- 联系人列表顶部插槽 -->
-        <template #sidebar-contact-fixedtop="instance">
-          <div style="margin: 15px 10px">
-            联系人
+        <template #sidebar-contact-fixedtop>
+          <div class="contact-fixedtop-box">
+            <el-input
+              placeholder="搜索联系人"
+              prefix-icon="el-icon-search"
+              @blur="closeSearch"
+              @focus="searchResult = true"
+              v-model="keywords"
+              class="input-with-select"
+            >
+            </el-input>
+            <div style="margin-left:10px">
+              <el-button
+                title="创建群聊"
+                icon="el-icon-plus"
+                @click="openCreateGroup"
+                circle
+              ></el-button>
+            </div>
+            <div style="margin-left:0px"     class="lemon-menu__item lemon-menu__item--active"         
+                title="聊天"                
+              @click="changeMenu('messages')"
+              >
+              <i class="lemon-icon-message" ></i>
+            </div>
+            <div class="search-list" v-if="searchResult">
+              <div
+                v-for="(item, index) in searchList"
+                :key="index"               
+                class="search-list-item"
+              >
+                <lemon-contact
+                  :contact="item"
+                  @click="openChat(item.id, instance)"
+                />
+              </div>
+              <div
+                v-if="searchList.length == 0"
+                style="margin: 20px"
+                align="center"
+              >
+                暂无
+              </div>
+            </div>
           </div>
         </template>
         <!-- 群组聊天展示的抽屉 -->
@@ -261,7 +316,7 @@
         <template #message-after="message">
           <span
             v-if="message.fromUser.id == user.id && message.is_group == 0"
-            style="visibility: visible"
+            style="visibility: hidden"
           >
             <span v-if="!message.is_read"> 未读 </span>
             <span v-if="message.is_read" style="color: green"> 已读 </span>
@@ -272,7 +327,7 @@
           {{ sendTips }}
         </template>
       </lemon-imui>
-    </div>
+ </div>   
     <!-- 创建群聊 -->
     <el-dialog
       title="创建群聊"
@@ -541,6 +596,7 @@
     <!-- 视频通话组件 -->
     <webrtc :contact="currentChat" :config="webrtcConfig" :alias="packageData.name" :userInfo="user" ref="webrtc" :key="componentKey"></webrtc>
   </div>
+  
 </template>
 
 <script>
@@ -548,9 +604,13 @@ import { mapState } from "vuex";
 import EmojiData from "../utils/emoji";
 import Background from "../assets/img/login-background.jpg";
 import {
+  getAuthAPI,
+  getUserAPI,
+  initContactsAPI,
   getContactsAPI,
   sendMessageAPI,
   getMessageListAPI,
+  gonnContactAPI,
   setMsgIsReadAPI,
   editGroupNameAPI,
   sendFileAPI,
@@ -586,12 +646,21 @@ import ChatTop from "../components/chatTop";
 import packageData from "../../package.json";
 import VoiceRecorder from "@/components/messageBox/voiceRecorder";
 import webrtc from "@/components/webrtc";
+import axios from 'axios'
+import lockr from 'lockr';
+
+
 const getTime = () => {
   return new Date().getTime();
 };
 
-const user = Lockr.get("UserInfo");
-
+// const user = Lockr.get("UserInfo");
+// const user = {
+//         id: 1,
+//         displayName: '沙王',
+//         avatar: '',
+//         account: ''
+//       }
 export default {
   name: "app",
   components: {
@@ -653,22 +722,21 @@ export default {
       sendTips: "使用 Enter 键发送消息",
       // 设置
       setting: {
-        theme: "blue",
+        theme: "defalut",
         hideMessageName: false,
         hideMessageTime: false,
         avatarCricle: true,
         sendKey: 1,
-        isVoice: true
+        isVoice: true        
       },
       // 当前登录用户
       user: {
-        id: user.user_id,
-        displayName: user.realname,
-        avatar: user.avatar,
-        account: user.account
+        id: '',
+        displayName: 'user.realname',
+        avatar: '',
+        account: ''        
       },
-      height: "640px",
-      pageSize: 1,
+      
       listRows: 10,
       is_group: 0,
       group_id: 0,
@@ -684,6 +752,7 @@ export default {
       // 置顶列表
       chatTopList: [],
       playAudio: null,
+      pwd:null,
       // 群成员邮件菜单
       groupMenu: [
         {
@@ -1072,6 +1141,11 @@ export default {
     }
   },
   watch: {
+    // pwd(v){
+    //   if(v){
+    //     this.Authnew(v);
+    //   }
+    // },
     playAudio (val) {
       if (val && this.currentMessage) {
         let message = this.currentMessage;
@@ -1088,7 +1162,6 @@ export default {
           })
         }, false);
       }
-
     },
     // 监听联系人搜索
     keywords() {
@@ -1126,21 +1199,23 @@ export default {
           })
           break;
         case "offline":
-          if(message.id==this.user.id && message.client_id!=client_id && !message.isMobile){
-            this.$message.error="您的账号在其他地方登录，已被迫下线！";
-            this.$store.dispatch("LogOut").then(() => {
-                this.$router.push({ path: "/login" });
-            });
-          }
+          // if(message.id==this.user.id && message.client_id!=client_id && !message.isMobile){
+          //   this.$message.error="您的账号在其他地方登录，已被迫下线！";
+          //   this.$store.dispatch("LogOut").then(() => {
+          //       this.$router.push({ path: "/login" });
+          //   });
+          // }
           
           break;
         // 接收消息
         case "simple":
         case "group":
+        case "message":
           // 如果是自己发送的消息则不需要提示
           if (message.fromUser.id != this.user.id) {
-            var contact = this.getContact(message.toContactId);
+            var contact = this.getContact(message.fromUser.id);
             // 如果开启了声音才播放
+           // console.log(contact)
             if (this.setting.isVoice && contact.is_notice == 1) {
               this.popNotice(message);
             }
@@ -1179,11 +1254,23 @@ export default {
           this.setLocalMsgIsRead(message);
           break;
         // 新增加了群聊
+        case "addContract":
         case "addGroup":
           if (message.owner_id != this.user.id) {
             IMUI.appendContact(message);
           }
-          bindGroupAPI({ client_id: client_id, group_id: message.id });
+         // bindGroupAPI({ client_id: client_id, group_id: message.id });
+          break;
+        case "removeContract":
+          IMUI.removeContact(message.id);
+          if (IMUI.currentContactId == message.id)
+            IMUI.changeContact(null);
+          break
+        case "removeGroup":
+          IMUI.removeContact(message.group_id,message.index);
+          
+          if (IMUI.currentContactId == message.group_id)
+            IMUI.changeContact(null);
           break;
         // 设置群管理员
         case "setManager":
@@ -1193,11 +1280,7 @@ export default {
             this.getGroupUserList(message.group_id);
           }
           break;
-        case "removeGroup":
-          IMUI.removeContact(message.group_id);
-          if (IMUI.currentContactId == message.group_id)
-            IMUI.changeContact(null);
-          break;
+
         // 发布公告
         case "setNotice":
           IMUI.updateContact({
@@ -1232,9 +1315,9 @@ export default {
   },
   created() {
     // 初始化用户设置
-    if (user.setting) {
-      this.setting = eval(user.setting);
-    }
+    // if (user.setting) {
+    //   this.setting = eval(user.setting);
+    // }
     if (window.Notification) {
       // 浏览器通知--window.Notification
       if (Notification.permission == "granted") {
@@ -1268,11 +1351,43 @@ export default {
         }
       });
     }
+    // 获取auth
 
+    // 初始化自己
+    // this.initUser({
+    //     id: '28sPwtCJq7Qc98y4sTJyS4Xwqto4',
+    //     displayName: '沙王',
+    //     avatar: '',
+    //     account: ''
+    //   });
     // 初始化联系人
-    this.getSimpleChat();
+    //this.getSimpleChat();
+
+    this.authnew('123456');
+
+  window.IMUI=  this;
   },
   methods: {
+        //    
+
+
+     authnew(pwd) {              
+            // console.log(pwd);
+             getAuthAPI(pwd).then(res=>{
+               getUserAPI().then(user=>{
+                this.initUser(user.data);
+                this.getSimpleChat();
+                this.$refs.socket.initWebSocket(user.data);
+               })
+            });
+    }, 
+    initUser(u) {
+      this.user= u;
+    },
+    changeMenu(menu) {
+      console.log(menu);
+      this.$refs.IMUI.changeMenu(menu);
+    },
     called(is_video){
       this.webrtcBox=true;
       this.$refs.webrtc.called(is_video);
@@ -1288,7 +1403,8 @@ export default {
         return `[视频]`;
       });
       // 获取联系人列表
-      getContactsAPI().then(res => {
+      initContactsAPI(100).then(res => {
+        //console.log(res)
         const data = res.data;
         this.contacts = data;
         var msg = {};
@@ -1345,6 +1461,7 @@ export default {
           name: "uploadVideo",
           title: "发送视频",
           click: () => {
+            //IMUI.$refs.editor.selectFile("video/*");
             var uploadVideo = this.$refs.uploadVideo;
             uploadVideo.click();
           },
@@ -1352,7 +1469,10 @@ export default {
             return <i class="el-icon el-icon-video-play f-18" style="vertical-align: middle;font-weight: 600;">
               <input style="display:none" type="file" accept="video/*" ref="uploadVideo" on-change={e => {
                 this.uploadVideo(e);
-              }} /></i>
+              }} />
+           </i>
+
+
           }
         },
         {
@@ -1394,18 +1514,18 @@ export default {
     // 点击了消息
     handleMessageClick(e, key, message, instance) {
       if (key == "status") {
+        
         instance.updateMessage({
           id: message.id,
-          status: "going",
-          content: "这个功能没做"
+          status: "going"          
         });
         setTimeout(() => {
-          instance.updateMessage({
-            id: message.id,
-            status: "failed",
-            content: "还是发送失败，哈哈哈哈！！！"
-          });
-        }, 2000);
+          // instance._emitSend({
+          //   id: message.id,
+          //   status: "failed",
+          //   content: "还是发送失败，哈哈哈哈！！！"
+          // });
+        }, 10);
         return;
       }
       // 语音消息点击事件
@@ -1460,7 +1580,7 @@ export default {
         unread: 0
       });
       // 聊天记录列表恢复到最初第一页
-      this.pageSize = 1;
+      this.pageSize = 18446744073709551614;
       this.displayName = contact.displayName;
       this.oldName = contact.displayName;
       this.currentChat = contact;
@@ -1489,28 +1609,33 @@ export default {
       }
       // 如果有未读的消息，需要将消息修改为已读
       if (data.length > 0) {
-        setMsgIsReadAPI({
-          is_group: contact.is_group,
-          toContactId: contact.id,
-          messages: data,
-          fromUser: contact.id
-        }).then(res => {
-          if (res.code == 0) {
-            this.setLocalMsgIsRead(data);
-          }
-        });
+        this.setLocalMsgIsRead(data);
+        // setMsgIsReadAPI({
+        //   is_group: contact.is_group,
+        //   toContactId: contact.id,
+        //   messages: data,
+        //   fromUser: contact.id
+        // }).then(res => {
+        //   if (res.code == 0) {
+        //     this.setLocalMsgIsRead(data);
+        //   }
+        // });
       }
       instance.closeDrawer();
     },
     uploadVideo (e) {
       let file = e.srcElement.files[0];
+      // if(!file){
+      //   return false;
+      // }
       let url = URL.createObjectURL(file);
       //经测试，发现audio也可获取视频的时长
-      let audioElement = new Audio(url);
-      let duration;
-      audioElement.addEventListener("loadedmetadata", function (_event) {
-        duration = audioElement.duration;
-      });
+      // let audioElement = new Audio(url);
+      // let duration;
+      // audioElement.addEventListener("loadedmetadata", function (_event) {
+      //   duration = audioElement.duration;
+      // });
+      //console.log(duration);
       let message = {
         content: url,
         fromUser: this.user,
@@ -1520,10 +1645,12 @@ export default {
         toContactId: this.currentChat.id,
         type: 'video',
         extends: {
-          duration: duration
+          duration: 5
         }//录音时长
       }
       this.diySendMessage(message, file);
+           // 将选择的文件清空
+      this.$refs.uploadVideo.value='';
     },
     // 发送语音消息
     sendVoice (duration, file) {
@@ -1546,16 +1673,20 @@ export default {
     //自定义消息的发送
     diySendMessage (message, file) {
       const { IMUI } = this.$refs;
+      console.log(message);
       IMUI.appendMessage(message, true);
-      this.handleSend(message, function () {
-        var replaceMessage = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
-          status: "succeed"
-        };
+      this.handleSend(message,     
+      function (replaceMessage) {
+        // var replaceMessage = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+        //   status: "succeed"
+        // };
         IMUI.updateContact({
           id: message.toContactId,
           lastContent: IMUI.lastContentRender(message),
           lastSendTime: message.sendTime
         });
+      
+    
         IMUI.CacheDraft.remove(message.toContactId);
         IMUI.updateMessage(Object.assign(message, replaceMessage));
       }, file);
@@ -1567,17 +1698,29 @@ export default {
       const { IMUI } = this.$refs;
       // 如果是文件选择文件上传接口
       if (file) {
-        // 判断文件如果大于5M就删除该聊天消息
-        if (file.size > 5242880) {
-          IMUI.removeMessage(message.id);
-          return this.$message.error("上传的内容不等大于5MB！");
-        }
-        formdata.append("file", file);
-        formdata.append("message", JSON.stringify(message));
-        sendFileAPI(formdata)
+      //console.log(message);
+
+      var reader = new FileReader();
+
+      reader.onload = function(e) {
+        var dataURL = reader.result;
+        message.content = dataURL;
+
+        message.fileName = file.name
+        message.fileSize = file.size
+        // console.log(message.content.length)
+        // console.log(file.size)
+        sendMessageAPI(message)
           .then(res => {
-            IMUI.updateMessage(res.data);
-            next();
+           // console.log(res.data);
+            //IMUI.setEditorValue("");
+          //   (replaceMessage = { status: "succeed" }) => {
+          // next();
+          //IMUI.updateMessage(Object.assign(message, res.data));
+        
+
+          //  IMUI.updateMessage(res.data);
+            next( res.data);
           })
           .catch(error => {
             if(error.code==401){//已开启禁言
@@ -1586,12 +1729,38 @@ export default {
               next({ status: "failed" });
             }
           });
+      }
+
+      reader.readAsDataURL(file);
+        //var sb=file.readAsBinaryString(Blob|File)
+        // for await (const file of ipfs.addAll(globSource('./docs', '**/*'))) {
+        // console.log(file)      
+        // 判断文件如果大于5M就删除该聊天消息
+        // if (file.size > 5242880) {
+        //   IMUI.removeMessage(message.id);
+        //   return this.$message.error("上传的内容不等大于5MB！");
+        // }
+
+        // formdata.append("file", file);
+        // formdata.append("message", JSON.stringify(message));
+        // sendFileAPI(formdata)
+        //   .then(res => {
+        //     IMUI.updateMessage(res.data);
+        //     next();
+        //   })
+        //   .catch(error => {
+        //     if(error.code==401){//已开启禁言
+        //       IMUI.removeMessage(message.id);
+        //     }else{
+        //       next({ status: "failed" });
+        //     }
+        //   });
       } else {
         sendMessageAPI(message)
           .then(res => {
             IMUI.setEditorValue("");
-            IMUI.updateMessage(res.data);
-            next();
+            ///IMUI.updateMessage(Object.assign(message, res.data));
+            next(res.data);
           })
           .catch(error => {
             if(error.code==401){//已开启禁言
@@ -1604,16 +1773,25 @@ export default {
     },
     // 拉取聊天记录
     handlePullMessages(contact, next, instance) {
-      getMessageListAPI({
-        toContactId: contact.id,
-        is_group: contact.is_group,
-        pageSize: this.pageSize,
-        listRows: this.listRows
-      })
-        .then(res => {
-          this.pageSize++;
+      // {
+      //   toContactId: contact.id,
+      //   is_group: contact.is_group,
+      //   pageSize: this.pageSize,
+      //   listRows: this.listRows
+      // }
+     // console.log(contact);
+      if(!contact.pageSize){
+        contact.pageSize = new Date().getTime()
+      }
+      //console.log(contact);
+      getMessageListAPI(this.listRows,contact.pageSize,contact.user_id)
+        .then(res => {         
           let isEnd = false;
           let messages = res.data;
+          if(messages.length>0){
+            contact.pageSize =messages[0].sendTime;
+          }
+        
           if (messages.length < this.listRows) {
             isEnd = true;
           }
@@ -1855,21 +2033,21 @@ export default {
     // 接收消息重新渲染
     recieveMsg(message) {
       const { IMUI } = this.$refs;
-      const contact = IMUI.getCurrentContact();
+     //const contact = IMUI.getCurrentContact();
       // 如果收到消息是当前窗口的聊天，需要将消息修改为已读
-      if (contact.id == message.toContactId) {
-        var data = [];
-        data.push(message);
-        setMsgIsReadAPI({
-          toContactId: contact.id,
-          is_group: contact.is_group,
-          messages: data,
-          fromUser: message.fromUser.id
-        });
-      }
+      // if (contact.id == message.fromUser.id) {
+      //   var data = [];
+      //   data.push(message);
+      //   setMsgIsReadAPI({
+      //     toContactId: contact.id,
+      //     is_group: contact.is_group,
+      //     messages: data,
+      //     fromUser: message.fromUser.id
+      //   });
+      // }
       if(this.user.id==message.toContactId){
         // 这里需要将原来的发送对象的id换回来，哈哈哈
-        message.toContactId=message.toUser;
+        message.toContactId=message.fromUser.id;
       }
       IMUI.appendMessage(message, true);
     },
@@ -1922,26 +2100,37 @@ export default {
   }
 };
 </script>
+<style>
+html{
+  height: 100%;
+  margin: 0px;
+}
+body {
+  height: 100%;
+  margin: 0px;
+}
+</style>
 <style scoped lang="scss">
-.main-container {
-  display: flex;
-  -webkit-box-pack: center;
-  -ms-flex-pack: center;
-  justify-content: center;
-  -webkit-box-align: center;
-  -ms-flex-align: center;
-  align-items: center;
-  width: 100%;
-  height: 100vh;
-  background-size: cover;
-}
-.chat-box {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
-}
+
+// .main-container {
+//   display: flex;
+//   -webkit-box-pack: center;
+//   -ms-flex-pack: center;
+//   justify-content: center;
+//   -webkit-box-align: center;
+//   -ms-flex-align: center;
+//   align-items: center;
+//   width: 100%;
+//   height: 100vh;
+//   background-size: cover;
+// }
+// .chat-box {
+//   position: absolute;
+//   top: 50%;
+//   left: 50%;
+//   transform: translate(-50%, -50%);
+//   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+// }
 
 .cover {
   text-align: center;
@@ -1950,6 +2139,7 @@ export default {
   top: 45%;
   left: 50%;
   transform: translate(-50%, -50%);
+  
   i {
     font-size: 84px;
     color: #e6e6e6;

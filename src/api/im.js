@@ -1,28 +1,122 @@
 import request from '@/utils/request'
+import * as rpc2request from '@/utils/jsonrpc2.js'
+/**
+ * 获取聊天联系人列表
+ * @param {}
+ */
+ export async  function getAuthAPI(pwd) {
+    var r= rpc2request.RpcRequestMessage('maons.GetAuth',pwd,'read')
+   // console.log(JSON.stringify(r))
+        var res =  await request({
+            url: '',
+            method: 'post',
+            data: JSON.stringify(r)
+            // headers: {
+            //     'Content-Type': 'application/json',
+            //   //  'Authorization' : 'Bearer 0'
+            // }
+        }) ;
+        //console.log(res);
+        request.defaults.headers['Authorization'] = 'Bearer '+ res.data;
+       // .headers[]
+        return res
+    }
+/**
+ * 获取聊天联系人列表
+ * @param {}
+ */
+ export function getUserAPI() {
+    var r= rpc2request.RpcRequestMessage('maons.GetUser')
+   // console.log(JSON.stringify(r))
+        return request({
+            url: '',
+            method: 'post',
+            data: JSON.stringify(r),
+            // headers: {
+            //     'Content-Type': 'application/json'
+            // }
+        })  
+    }
+
+
 
 /**
  * 获取聊天联系人列表
- * @param {*} data
+ * @param {}
  */
-export function getContactsAPI(data) {
-    return request({
-        url: 'enterprise/im/getContacts',
-        method: 'post',
-        data: data
-    })
-}
+ export function initContactsAPI(  size ) {
+    var r= rpc2request.RpcRequestMessage('maons.InitContacts',size)
+   // console.log(JSON.stringify(r))
+        return request({
+            url: '',
+            method: 'post',
+            data: JSON.stringify(r),
+            // headers: {
+            //     'Content-Type': 'application/json'
+            // }
+        })  
+    }
+
+
+    
+
+/**
+ * 尝试连接
+ * @param {}
+ */
+export function gonnContactAPI(id) {
+    var r= rpc2request.RpcRequestMessage('maons.GonnContact',id)
+   // console.log(JSON.stringify(r))
+        return request({
+            url: '',
+            method: 'post',
+            data: JSON.stringify(r),            
+        })  
+    }
+
+/**
+ * 获取聊天联系人列表
+ * @param {}
+ */
+export function getContactsAPI(tag , size , fromuser) {
+    var r= rpc2request.RpcRequestMessage('maons.GetContacts',tag,size,fromuser)
+   // console.log(JSON.stringify(r))
+        return request({
+            url: '',
+            method: 'post',
+            data: JSON.stringify(r),            
+        })  
+    }
 
 /**
  * 发送聊天消息
  * @param {*} data
  */
 export function sendMessageAPI(data) {
+    var r2=JSON.stringify(rpc2request.RpcRequestMessage('maons.SendMessage',data))
+   // console.log(r2.params[0].content.lenght)
     return request({
-        url: 'enterprise/im/sendMessage',
+        url: '',
         method: 'post',
-        data: data
+        data: r2
     })
 }
+/**
+ * 发送聊天消息
+ * @param {*} data
+ */
+ export function RequestEnvent(clientid) {
+    return request({
+        url: '',
+        method: 'post',
+        data: JSON.stringify(rpc2request.RpcRequestMessage('maons.RequestEnvent',clientid)),
+        timeout: 60000000000
+        // headers: {
+        //     timeout: 60000000000
+        // }    
+    })
+}
+
 
 /**
  * 发送聊天消息
@@ -54,11 +148,12 @@ export function sendFileAPI(data) {
  * 获取聊天记录
  * @param {*} data
  */
-export function getMessageListAPI(data) {
+export function getMessageListAPI(size,form1,id) {
+   // console.log(form1)
     return request({
-        url: 'enterprise/im/getMessageList',
+        url: '',
         method: 'post',
-        data: data
+        data: JSON.stringify(rpc2request.RpcRequestMessage('maons.GetMessagelist',size,form1,id))
     })
 }
 
@@ -68,7 +163,7 @@ export function getMessageListAPI(data) {
  */
 export function setMsgIsReadAPI(data) {
     return request({
-        url: 'enterprise/im/setMsgIsRead',
+        url: '',
         method: 'post',
         data: data
     })
