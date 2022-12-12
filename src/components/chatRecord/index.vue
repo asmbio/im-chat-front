@@ -157,7 +157,7 @@ export default {
       activeName: "all",
       keywords: "",
       msgType: "all",
-      pageSize: 1,
+      pageSize: 18446744073709551614,
       listRows: 20,
       total: 0,
       singlePage: false,
@@ -175,14 +175,19 @@ export default {
       this.getMessage();
     },
     getMessage() {
-      getMessageListAPI({
-        toContactId: this.contact.id,
-        is_group: this.contact.is_group,
-        type: this.msgType,
-        keywords: this.keywords,
-        pageSize: this.pageSize,
-        listRows: this.listRows
-      })
+      // {
+      //   toContactId: this.contact.id,
+      //   is_group: this.contact.is_group,
+      //   type: this.msgType,
+      //   keywords: this.keywords,
+      //   pageSize: this.pageSize,
+      //   listRows: this.listRows
+      // }
+
+      if(!contact.pageSize){
+        contact.pageSize = new Date().getTime()
+      }
+      getMessageListAPI(this.listRows, contact.pageSize ,this.contact.user_id)
         .then(res => {
           this.dataList = res.data;
           this.total = res.count;
@@ -193,6 +198,10 @@ export default {
           }
           if (this.msgType == "image") {
             this.previewList = arrayToString(res.data, "content", false);
+          }
+          let messages = res.data;
+          if(messages.length>0){
+            contact.pageSize =messages[0].sendTime;
           }
         })
         .catch(error => {

@@ -9,75 +9,91 @@
 </template>
 
 <script>
-    import Vue from 'vue'
-    import {bindClientIdAPI,offlineAPI} from "@/api/login";
-    import Lockr from 'lockr'
+    import Vue from 'vue';
+    import {RequestEnvent} from "@/api/im";
 
     export default {
         name: "socket",
         data() {
             return {
-                websocket: null,
+                user:null,
+                loop:false
+               // websocket: null,
             }
         },
         methods: {
-            getWsUrl(){
-                let WS_URI = "wss://im.raingad.com/wss";
-                if(process.env.NODE_ENV==='production'){
-                    var domain=document.domain;
-                    var protocol=window.location.protocol;
-                    var wsProtocol="ws://";
-                    if(protocol=="https:"){
-                        wsProtocol="wss://";
-                    }
-                    WS_URI=wsProtocol+domain+"/wss";
-                    console.log(WS_URI);
-                }
-                return WS_URI;
-                
-            },
-            initWebSocket() { //初始化weosocket
+   
+            initWebSocket(user) { //初始化weosocket
                 //ws地址
-                const WS_URI = this.getWsUrl();
-                this.websocket = new WebSocket(WS_URI);
-                this.websocket.onmessage = this.websocketOnMessage;
-                this.websocket.onclose = this.websocketClose;
-                Vue.prototype.$websocket = this.websocket;
+                
+                this.user= user;
+                if (this.loop){
+                    return;
+                }
+                this.loop=true;
+                // 调用getenvent 接口 
+                // 循环调用
+                this.loopEnvent(user.id);
+        
+                // const WS_URI = this.getWsUrl();
+                // this.websocket = new WebSocket(WS_URI);
+                // this.websocket.onmessage = this.websocketOnMessage;
+                // this.websocket.onclose = this.websocketClose;
+                // Vue.prototype.$websocket = this.websocket;
 
             },
+
+            async  loopEnvent(id){       
+                console.log("start loop ")
+                while (this.loop){
+                    var data =await RequestEnvent(id);
+                   // console.log(data);
+                    if (data){
+         
+                        this.websocketOnMessage(data);
+                    }else{
+                        await new Promise((r)=>setTimeout(r,1000));
+                    }
+                }
+               
+            },
             websocketOnMessage(e) { //数据接收
-                const data = JSON.parse(e.data);
-                let userInfo=Lockr.get('UserInfo');
-                switch (data['type']) {
+               // console.log(e);
+               // const data = JSON.parse(e.data);
+               // let userInfo=Lockr.get('UserInfo');
+                for (const i in e.data) {
+                    switch (e.data[i]['type']) {
                     // 服务端ping客户端
                     case 'ping':
                         this.websocketSend({type:"pong"});
                         break;
                     // 登录 更新用户列表
                     case 'init':
-                        Lockr.set('client_id',data['client_id']);
-                        bindClientIdAPI({client_id: data['client_id'],user_id:userInfo.user_id}).then(res=>{
-                            this.websocketSend({type:"bindUid",user_id:userInfo.user_id});
-                            console.log(data['client_id'],'消息服务启动成功');
-                        }).catch(error => {
-                            console.log('连接失败');
-                        })
+                        // Lockr.set('client_id',data['client_id']);
+                        // bindClientIdAPI({client_id: data['client_id'],user_id:userInfo.user_id}).then(res=>{
+                        //     this.websocketSend({type:"bindUid",user_id:userInfo.user_id});
+                        //     console.log(data['client_id'],'消息服务启动成功');
+                        // }).catch(error => {
+                        //     console.log('连接失败');
+                        // })
                         break;
                     default:
-                        this.$store.commit('catchSocketAction', data);
+                        this.$store.commit('catchSocketAction', e.data[i]);
                         break;
                 }
+                } 
+               
             },
-            websocketSend(agentData) {//数据发送
-                var data=JSON.stringify(agentData);
-                this.websocket.send(data);
-            },
-            websocketClose(e) {  //关闭
-                let userInfo=Lockr.get('UserInfo');
-                offlineAPI({user_id:userInfo.user_id}).then(res=>{
-                    console.log("connection closed (" + e.code + ")");
-                })
-            },
+            // websocketSend(agentData) {//数据发送
+            //     var data=JSON.stringify(agentData);
+            //     this.websocket.send(data);
+            // },
+            // websocketClose(e) {  //关闭
+            //     let userInfo=Lockr.get('UserInfo');
+            //     offlineAPI({user_id:userInfo.user_id}).then(res=>{
+            //         console.log("connection closed (" + e.code + ")");
+            //     })
+            // },
             playAudio () {
                 const audio = document.getElementById('chatAudio');
                 // 从头播放
@@ -86,7 +102,7 @@
             }
         },
         created() {
-            this.initWebSocket()
+            //this.initWebSocket()
         }
     }
 </script>

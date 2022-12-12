@@ -21,11 +21,11 @@ export default {
               style={{
               }}
               >
-                 <el-image style="max-height: 200px" src={ props.extends.poster } fit="cover"></el-image>
-                  {props.extends.duration}
-                  <div class="video-shadow">
-                  <div class="el-icon el-icon-video-play c-white f-28 video-icon"></div>
-                  </div>
+              <video style="min-height:200px;" src={props.content} controls>
+                {/* <source src="movie.mp4" type="video/mp4">
+                <source src="movie.ogg" type="video/ogg">    */}
+              </video>
+    
               </div>
             );
           },
