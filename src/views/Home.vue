@@ -109,14 +109,14 @@
                 @blur="saveGroupName(contact)"
               />
             </div>
-            <div class="message-title-tools">
+            <div class="message-title-tools" v-show="false">
               <i class="el-icon-phone-outline mr-10" title="语音通话" v-if="!contact.is_group" @click="called(false)"></i>
               <i class="el-icon-video-camera mr-10" title="视频通话" v-if="!contact.is_group" @click="called(true)"></i>
-              <i
+              <!-- <i
                 class="el-icon-time"
                 @click="openMessageBox"
                 title="消息管理器"
-              ></i>
+              ></i> -->
               
             </div>
           </div>
@@ -1256,16 +1256,13 @@ export default {
         // 新增加了群聊
         case "addContract":
         case "addGroup":
+        case "removeContract":
           if (message.owner_id != this.user.id) {
             IMUI.appendContact(message);
           }
          // bindGroupAPI({ client_id: client_id, group_id: message.id });
           break;
-        case "removeContract":
-          IMUI.removeContact(message.id);
-          if (IMUI.currentContactId == message.id)
-            IMUI.changeContact(null);
-          break
+            
         case "removeGroup":
           IMUI.removeContact(message.group_id,message.index);
           
@@ -1310,6 +1307,9 @@ export default {
             id: message.group_id,
             setting: message.setting
           });
+        case "updateMetainfo":
+          this.initUser(message);
+          this.u
       }
     }
   },
@@ -1363,14 +1363,12 @@ export default {
     // 初始化联系人
     //this.getSimpleChat();
 
-    this.authnew('123456');
+    //this.authnew('123456');
 
   window.IMUI=  this;
   },
   methods: {
         //    
-
-
      authnew(pwd) {              
             // console.log(pwd);
              getAuthAPI(pwd).then(res=>{
@@ -1519,13 +1517,26 @@ export default {
           id: message.id,
           status: "going"          
         });
-        setTimeout(() => {
-          // instance._emitSend({
-          //   id: message.id,
-          //   status: "failed",
-          //   content: "还是发送失败，哈哈哈哈！！！"
-          // });
-        }, 10);
+
+            const { IMUI } = this.$refs;
+            console.log(message);
+              //IMUI.appendMessage(message, true);
+              this.handleSend(message,     
+              function (replaceMessage) {
+                // var replaceMessage = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+                //   status: "succeed"
+                // };
+                IMUI.updateContact({
+                  id: message.toContactId,
+                  lastContent: IMUI.lastContentRender(message),
+                  lastSendTime: message.sendTime
+                });
+              
+            
+                //IMUI.CacheDraft.remove(message.toContactId);
+                IMUI.updateMessage(Object.assign(message, replaceMessage));
+              }, null);
+    
         return;
       }
       // 语音消息点击事件
@@ -1673,7 +1684,7 @@ export default {
     //自定义消息的发送
     diySendMessage (message, file) {
       const { IMUI } = this.$refs;
-      console.log(message);
+     // console.log(message);
       IMUI.appendMessage(message, true);
       this.handleSend(message,     
       function (replaceMessage) {

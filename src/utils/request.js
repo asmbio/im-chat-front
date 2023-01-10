@@ -57,7 +57,7 @@ axios.defaults.headers['Content-Type'] = 'application/json;charset=UTF-8'
     // baseURL + 'index.php/' 默认请求地址
     // process.env.BASE_API 自定义请求地址
 
-window.BASE_URL =  'http://127.0.0.1:8108/maons/v0'
+window.BASE_URL =  'http://127.0.0.1:8106/maons/v0'
 const service = axios.create({
     baseURL: window.BASE_URL, // api 的 base_url
     timeout: 60000 ,// 请求超时时间

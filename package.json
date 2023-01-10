@@ -1,8 +1,8 @@
 {
-  "name": "Raingad-IM",
+  "name": "Maons-IM",
   "version": "1.10.30",
-  "description": "一款基于vue2.0的即时聊天工具", 
-  "logo": "https://im.file.raingad.com/logo/logo.png", 
+  "description": "去中心化聊天软件",
+  "logo": "https://im.file.raingad.com/logo/logo.png",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -14,7 +14,7 @@
     "core-js": "^3.8.3",
     "element-ui": "^2.15.1",
     "js-audio-recorder": "^1.0.7",
-    "lemon-imui": "^1.7.6",
+    "lemon-imui": "file:../lemon-imui",
     "lockr": "^0.8.5",
     "nprogress": "^0.2.0",
     "v-clipboard": "^2.2.3",
@@ -41,10 +41,10 @@
   },
   "rules": {
     "generator-star-spacing": "off",
-    "no-tabs":"off",
-    "no-unused-vars":"off",
-    "no-console":"off",
-    "no-irregular-whitespace":"off",
+    "no-tabs": "off",
+    "no-unused-vars": "off",
+    "no-console": "off",
+    "no-irregular-whitespace": "off",
     "no-debugger": "off"
   }
 }

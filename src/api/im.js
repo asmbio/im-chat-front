@@ -16,7 +16,7 @@ import * as rpc2request from '@/utils/jsonrpc2.js'
             //   //  'Authorization' : 'Bearer 0'
             // }
         }) ;
-        //console.log(res);
+        console.log(res);
         request.defaults.headers['Authorization'] = 'Bearer '+ res.data;
        // .headers[]
         return res
